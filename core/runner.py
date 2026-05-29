@@ -1,0 +1,73 @@
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+from typing import Callable, Optional
+
+from core.ocr_engine import OCREngine, OCREngineError, default_model_dir
+from utils.file_utils import ensure_dir, iter_images
+
+
+ProgressCallback = Callable[[str, Optional[Path], int, int, object], None]
+
+
+def run_batch(
+    task: str,
+    input_dir: str | Path,
+    output_dir: str | Path,
+    model_dir: str | Path | None = None,
+    extensions: set[str] | None = None,
+    name_rule: str = "name-title",
+    progress: ProgressCallback | None = None,
+) -> dict[str, int]:
+    source_dir = Path(input_dir)
+    target_dir = ensure_dir(output_dir)
+    if not source_dir.is_dir():
+        raise ValueError(f"input directory does not exist: {source_dir}")
+
+    files = list(iter_images(source_dir, extensions or {"jpg", "jpeg", "png"}))
+    if not files and progress:
+        progress("empty", None, 0, 0, 0)
+
+    OCREngine.configure(Path(model_dir) if model_dir else default_model_dir())
+    try:
+        from core.task_cert import process_cert_image
+        from core.task_excel import process_excel_image
+    except ImportError as exc:
+        raise ImportError(f"missing dependency: {exc}. Run: pip install -r requirements.txt") from exc
+
+    success = 0
+    failed = 0
+    outputs = 0
+    for index, image_path in enumerate(files, start=1):
+        try:
+            if progress:
+                progress("start", image_path, index, len(files), outputs)
+            if task == "excel":
+                count = process_excel_image(image_path, target_dir, name_rule)
+            else:
+                count = process_cert_image(image_path, target_dir, name_rule)
+            success += 1
+            outputs += count
+            if progress:
+                progress("ok", image_path, index, len(files), count)
+            safe_print(f"OK: {image_path.name} -> {count} file(s)")
+        except (OCREngineError, RuntimeError, ValueError) as exc:
+            failed += 1
+            if progress:
+                progress("failed", image_path, index, len(files), str(exc))
+            safe_print(f"FAILED: {image_path.name}: {exc}", error=True)
+        except Exception as exc:
+            failed += 1
+            if progress:
+                progress("failed", image_path, index, len(files), f"unexpected error: {exc}")
+            safe_print(f"FAILED: {image_path.name}: unexpected error: {exc}", error=True)
+
+    return {"input": len(files), "success": success, "failed": failed, "output": outputs}
+
+
+def safe_print(message: str, error: bool = False) -> None:
+    stream = sys.stderr if error else sys.stdout
+    if stream is None:
+        return
+    print(message, file=stream)

@@ -1,0 +1,58 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "photo-caption-hr"
+version = "0.1.0"
+description = "Windows OCR utility for batch photo captioning, marking, and certificate renaming."
+readme = "README.md"
+requires-python = ">=3.9,<3.12"
+license = { text = "MIT" }
+authors = [
+  { name = "photoCaptionHR contributors" }
+]
+keywords = ["ocr", "photo", "caption", "paddleocr", "pyinstaller", "desktop"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Win32 (MS Windows)",
+  "Intended Audience :: End Users/Desktop",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: Microsoft :: Windows",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11"
+]
+dependencies = [
+  "paddlepaddle>=2.6.0,<3.0",
+  "paddleocr>=2.7.0,<3.0",
+  "opencv-python>=4.8.0",
+  "Pillow>=10.0.0",
+  "numpy>=1.24.0",
+  "pyinstaller>=6.0.0",
+  "Cython>=3.0.0",
+  "shapely>=2.0.0",
+  "pyclipper>=1.3.0",
+  "lmdb>=1.4.0",
+  "tqdm>=4.66.0",
+  "beautifulsoup4>=4.12.0",
+  "python-docx>=1.1.0",
+  "albumentations>=1.4.0,<2.0",
+  "albucore==0.0.24"
+]
+
+[project.urls]
+Homepage = "https://github.com/nicxzq/photoCaptionHR"
+Repository = "https://github.com/nicxzq/photoCaptionHR.git"
+Issues = "https://github.com/nicxzq/photoCaptionHR/issues"
+
+[project.scripts]
+photo-caption-hr = "main:main"
+photosign = "main:main"
+
+[tool.setuptools]
+py-modules = ["main", "gui"]
+
+[tool.setuptools.packages.find]
+include = ["core", "utils"]
