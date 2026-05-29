@@ -21,6 +21,8 @@ NAME_RULES = {
     "姓名-文档标题": "name-title",
     "文档标题-姓名": "title-name",
     "仅姓名": "name",
+    "序号-姓名-文档标题": "seq-name-title",
+    "姓名-文档标题-级别": "name-title-level",
 }
 
 
@@ -75,7 +77,8 @@ class PhotoSignApp:
         self.progress.grid(row=5, column=0, columnspan=3, sticky="ew", pady=(14, 6))
         ttk.Label(frame, textvariable=self.status_var).grid(row=6, column=0, columnspan=3, sticky="w")
 
-        self.log = scrolledtext.ScrolledText(frame, height=14, state="disabled")
+        self.log = scrolledtext.ScrolledText(frame, height=14)
+        self.log.bind("<Key>", self.block_log_edit)
         self.log.grid(row=7, column=0, columnspan=3, sticky="nsew", pady=10)
         frame.rowconfigure(7, weight=1)
 
@@ -183,15 +186,16 @@ class PhotoSignApp:
         messagebox.showerror("处理失败", message)
 
     def append_log(self, text: str) -> None:
-        self.log.config(state="normal")
         self.log.insert(tk.END, text + "\n")
         self.log.see(tk.END)
-        self.log.config(state="disabled")
 
     def clear_log(self) -> None:
-        self.log.config(state="normal")
         self.log.delete("1.0", tk.END)
-        self.log.config(state="disabled")
+
+    def block_log_edit(self, event: tk.Event) -> str | None:
+        if event.state & 0x4 and event.keysym.lower() in {"a", "c"}:
+            return None
+        return "break"
 
     def open_output(self) -> None:
         path = self.output_var.get()

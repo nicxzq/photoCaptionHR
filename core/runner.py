@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import shutil
 import sys
 from pathlib import Path
 from typing import Callable, Optional
 
 from core.ocr_engine import OCREngine, OCREngineError, default_model_dir
-from utils.file_utils import ensure_dir, iter_images
+from utils.file_utils import ensure_dir, iter_images, safe_filename
 
 
 ProgressCallback = Callable[[str, Optional[Path], int, int, object], None]
@@ -54,16 +55,38 @@ def run_batch(
             safe_print(f"OK: {image_path.name} -> {count} file(s)")
         except (OCREngineError, RuntimeError, ValueError) as exc:
             failed += 1
+            message = failure_message(image_path, target_dir, str(exc))
             if progress:
-                progress("failed", image_path, index, len(files), str(exc))
-            safe_print(f"FAILED: {image_path.name}: {exc}", error=True)
+                progress("failed", image_path, index, len(files), message)
+            safe_print(f"FAILED: {image_path.name}: {message}", error=True)
         except Exception as exc:
             failed += 1
+            message = failure_message(image_path, target_dir, f"unexpected error: {exc}")
             if progress:
-                progress("failed", image_path, index, len(files), f"unexpected error: {exc}")
-            safe_print(f"FAILED: {image_path.name}: unexpected error: {exc}", error=True)
+                progress("failed", image_path, index, len(files), message)
+            safe_print(f"FAILED: {image_path.name}: {message}", error=True)
 
     return {"input": len(files), "success": success, "failed": failed, "output": outputs}
+
+
+def failure_message(source: Path, output_dir: Path, reason: str) -> str:
+    try:
+        failed_path = copy_failed_image(source, output_dir)
+    except Exception as exc:
+        return f"{reason}; failed image copy failed: {exc}"
+    return f"{reason}; copied to {failed_path}"
+
+
+def copy_failed_image(source: Path, output_dir: Path) -> Path:
+    failed_dir = ensure_dir(output_dir / "failed")
+    suffix = source.suffix or ".jpg"
+    target = failed_dir / f"{safe_filename(source.stem)}{suffix}"
+    index = 2
+    while target.exists():
+        target = failed_dir / f"{safe_filename(source.stem)}_{index}{suffix}"
+        index += 1
+    shutil.copy2(source, target)
+    return target
 
 
 def safe_print(message: str, error: bool = False) -> None:

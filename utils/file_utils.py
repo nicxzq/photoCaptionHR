@@ -42,11 +42,21 @@ def resolve_output_path(output_dir: str | Path, filename: str) -> Path:
     return candidate
 
 
-def output_filename(name: str, title: str, rule: str = "name-title") -> str:
+def output_filename(
+    name: str,
+    title: str,
+    rule: str = "name-title",
+    sequence: str = "",
+    level: str = "",
+) -> str:
     if rule == "title-name":
         stem = f"{title}-{name}"
     elif rule == "name":
         stem = name
+    elif rule == "seq-name-title":
+        stem = f"{sequence}-{name}-{title}"
+    elif rule == "name-title-level":
+        stem = f"{name}-{title}-{level}"
     else:
         stem = f"{name}-{title}"
     return f"{stem}.jpg"

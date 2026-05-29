@@ -25,7 +25,12 @@ def process_cert_image(input_path: str | Path, output_dir: str | Path, name_rule
     name = extract_cert_name(blocks)
     if not name:
         raise ValueError("name was not detected")
-    output_path = resolve_output_path(output_dir, output_filename(name, title, name_rule))
+    level = ""
+    if name_rule == "name-title-level":
+        level = extract_cert_level(blocks)
+        if not level:
+            raise ValueError("certificate level was not detected")
+    output_path = resolve_output_path(output_dir, output_filename(name, title, name_rule, level=level))
     save_as_jpg(path, output_path)
     return 1
 
@@ -69,6 +74,33 @@ def extract_cert_name(blocks: list[dict]) -> str:
                 if name:
                     return name
     return ""
+
+
+def extract_cert_level(blocks: list[dict]) -> str:
+    lines = group_text_lines(blocks)
+    return lines[4] if len(lines) >= 5 else ""
+
+
+def group_text_lines(blocks: list[dict]) -> list[str]:
+    if not blocks:
+        return []
+    ordered = sorted(blocks, key=lambda item: ((item["bbox"][1] + item["bbox"][3]) / 2, item["bbox"][0]))
+    heights = sorted(max(8, item["bbox"][3] - item["bbox"][1]) for item in ordered)
+    tolerance = max(10, int(heights[len(heights) // 2] * 0.8))
+    rows: list[list[dict]] = []
+    centers: list[float] = []
+    for block in ordered:
+        center = (block["bbox"][1] + block["bbox"][3]) / 2
+        if rows and abs(center - centers[-1]) <= tolerance:
+            rows[-1].append(block)
+            centers[-1] = sum((item["bbox"][1] + item["bbox"][3]) / 2 for item in rows[-1]) / len(rows[-1])
+        else:
+            rows.append([block])
+            centers.append(center)
+    return [
+        clean_text("".join(item["text"] for item in sorted(row, key=lambda item: item["bbox"][0])))
+        for row in rows
+    ]
 
 
 def _right_blocks(label: dict, blocks: list[dict]) -> list[dict]:

@@ -16,7 +16,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--input", required=True, help="Input image directory")
     parser.add_argument("--output", required=True, help="Output directory")
     parser.add_argument("--ext", default="jpg,jpeg,png", help="Comma-separated image extensions")
-    parser.add_argument("--name-rule", default="name-title", choices=("name-title", "title-name", "name"))
+    parser.add_argument(
+        "--name-rule",
+        default="name-title",
+        choices=("name-title", "title-name", "name", "seq-name-title", "name-title-level"),
+    )
     parser.add_argument(
         "--model-dir",
         default=None,
