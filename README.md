@@ -59,9 +59,7 @@ python main.py --task excel --input .\input\excelFile --output .\output\excelFil
 3. `%LOCALAPPDATA%\PhotoSign\models`
 4. `models` beside `main.py` when `%LOCALAPPDATA%` is unavailable
 
-For the packaged executable, `release\models` is used before `%LOCALAPPDATA%` when that directory exists. This makes offline release bundles explicit: copy prepared `det`, `rec`, and `cls` model folders into `release\models`.
-
-The model cache is external to the executable and is not committed to this repository. If `det`, `rec`, and `cls` model folders already exist, PaddleOCR uses them. If they are missing, PaddleOCR tries to download models into that directory. Without network and without cache, the tool shows a clear error.
+For the packaged executable, the prepared `det`, `rec`, and `cls` model folders are bundled inside `photosign.exe` and extracted to PyInstaller's runtime directory automatically. Development runs still use an external cache. If the external cache is missing, PaddleOCR tries to download models into that directory.
 
 On Windows, prefer an ASCII-only model path, for example `C:\PhotoSign\models`. Some PaddlePaddle builds cannot open model files from paths containing Chinese characters.
 
@@ -76,7 +74,6 @@ Output:
 ```text
 release/
   photosign.exe
-  models/
   input/
   output/
   README.md

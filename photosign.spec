@@ -3,7 +3,7 @@
 from PyInstaller.utils.hooks import collect_data_files, collect_dynamic_libs, collect_submodules
 
 
-datas = collect_data_files("Cython") + collect_data_files("paddleocr", include_py_files=True)
+datas = collect_data_files("Cython") + collect_data_files("paddleocr", include_py_files=True) + [("models", "models")]
 binaries = collect_dynamic_libs("paddle")
 hiddenimports = [
     "paddleocr",

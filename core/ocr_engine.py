@@ -34,7 +34,7 @@ def default_model_dir() -> Path:
     if env_value:
         return Path(env_value).expanduser().resolve()
     if getattr(sys, "frozen", False):
-        bundled = app_base_dir() / "models"
+        bundled = Path(getattr(sys, "_MEIPASS", app_base_dir())) / "models"
         if bundled.exists():
             return bundled
     local_app = os.environ.get("LOCALAPPDATA")
