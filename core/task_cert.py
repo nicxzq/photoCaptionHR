@@ -14,9 +14,20 @@ NAME_RE = re.compile(r"\u59d3\s*\u540d\s*[\uff1a:]?\s*(?P<name>[\u4e00-\u9fff]{2
 NAME_LABEL = "\u59d3\u540d"
 SURNAME_LABEL = "\u59d3"
 GIVEN_LABEL = "\u540d"
+LEVEL_RE = re.compile(
+    r"(?:\u7ea7\u522b|\u7b49\u7ea7|\u7b49\u6b21)\s*[\uff1a:]\s*(?P<level>.+?)"
+    r"(?=(?:\u6709\u6548\u671f|\u8bc1\u4e66\u7f16\u53f7|\u7f16\u53f7|$))"
+)
 
 
-def process_cert_image(input_path: str | Path, output_dir: str | Path, name_rule: str = "name-title") -> int:
+def process_cert_image(
+    input_path: str | Path,
+    output_dir: str | Path,
+    name_rule: str = "name-title",
+    *,
+    name_attributes: tuple[str, ...] | None = None,
+    separator: str = "-",
+) -> int:
     path = Path(input_path)
     with Image.open(path) as image:
         height = image.height
@@ -26,11 +37,20 @@ def process_cert_image(input_path: str | Path, output_dir: str | Path, name_rule
     if not name:
         raise ValueError("name was not detected")
     level = ""
-    if name_rule == "name-title-level":
+    if ("level" in name_attributes) if name_attributes is not None else name_rule == "name-title-level":
         level = extract_cert_level(blocks)
         if not level:
             raise ValueError("certificate level was not detected")
-    output_path = resolve_output_path(output_dir, output_filename(name, title, name_rule, level=level))
+    filename = output_filename(
+        name,
+        title,
+        name_rule,
+        task="cert",
+        attributes=name_attributes,
+        separator=separator,
+        level=level,
+    )
+    output_path = resolve_output_path(output_dir, filename)
     save_as_jpg(path, output_path)
     return 1
 
@@ -78,6 +98,10 @@ def extract_cert_name(blocks: list[dict]) -> str:
 
 def extract_cert_level(blocks: list[dict]) -> str:
     lines = group_text_lines(blocks)
+    for line in lines:
+        match = LEVEL_RE.search(line)
+        if match and match.group("level"):
+            return match.group("level")
     return lines[4] if len(lines) >= 5 else ""
 
 

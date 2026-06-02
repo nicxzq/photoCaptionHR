@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 import shutil
-import sys
 from pathlib import Path
 from typing import Callable, Optional
 
 from core.ocr_engine import OCREngine, OCREngineError, default_model_dir
-from utils.file_utils import ensure_dir, iter_images, safe_filename
+from utils.file_utils import ensure_dir, iter_images, normalize_naming_attributes, safe_filename, safe_print
 
 
 ProgressCallback = Callable[[str, Optional[Path], int, int, object], None]
@@ -20,9 +19,14 @@ def run_batch(
     extensions: set[str] | None = None,
     name_rule: str = "name-title",
     progress: ProgressCallback | None = None,
+    name_attributes: tuple[str, ...] | None = None,
+    separator: str = "-",
 ) -> dict[str, int]:
     source_dir = Path(input_dir)
     target_dir = ensure_dir(output_dir)
+    selected_attributes = (
+        normalize_naming_attributes(task, name_attributes) if name_attributes is not None else None
+    )
     if not source_dir.is_dir():
         raise ValueError(f"input directory does not exist: {source_dir}")
 
@@ -37,6 +41,13 @@ def run_batch(
     except ImportError as exc:
         raise ImportError(f"missing dependency: {exc}. Run: pip install -r requirements.txt") from exc
 
+    if files:
+        if progress:
+            progress("initializing", None, 0, len(files), "正在加载 OCR 模型...")
+        OCREngine.preload()
+        if progress:
+            progress("ready", None, 0, len(files), "模型加载完成")
+
     success = 0
     failed = 0
     outputs = 0
@@ -44,10 +55,23 @@ def run_batch(
         try:
             if progress:
                 progress("start", image_path, index, len(files), outputs)
+            safe_print(f"PROCESSING: {image_path.name}")
             if task == "excel":
-                count = process_excel_image(image_path, target_dir, name_rule)
+                count = process_excel_image(
+                    image_path,
+                    target_dir,
+                    name_rule,
+                    name_attributes=selected_attributes,
+                    separator=separator,
+                )
             else:
-                count = process_cert_image(image_path, target_dir, name_rule)
+                count = process_cert_image(
+                    image_path,
+                    target_dir,
+                    name_rule,
+                    name_attributes=selected_attributes,
+                    separator=separator,
+                )
             success += 1
             outputs += count
             if progress:
@@ -87,10 +111,3 @@ def copy_failed_image(source: Path, output_dir: Path) -> Path:
         index += 1
     shutil.copy2(source, target)
     return target
-
-
-def safe_print(message: str, error: bool = False) -> None:
-    stream = sys.stderr if error else sys.stdout
-    if stream is None:
-        return
-    print(message, file=stream)

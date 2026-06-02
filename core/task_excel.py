@@ -6,7 +6,7 @@ from pathlib import Path
 from PIL import Image
 
 from core.ocr_engine import OCREngine
-from utils.file_utils import output_filename, resolve_output_path
+from utils.file_utils import output_filename, resolve_output_path, safe_print
 from utils.image_draw import draw_checkmark
 from utils.table_detect import detect_table_rows, estimate_rows_from_ocr
 
@@ -20,7 +20,14 @@ HEADER_WORDS = (
 )
 
 
-def process_excel_image(input_path: str | Path, output_dir: str | Path, name_rule: str = "name-title") -> int:
+def process_excel_image(
+    input_path: str | Path,
+    output_dir: str | Path,
+    name_rule: str = "name-title",
+    *,
+    name_attributes: tuple[str, ...] | None = None,
+    separator: str = "-",
+) -> int:
     path = Path(input_path)
     with Image.open(path) as original:
         image = original.convert("RGB")
@@ -39,15 +46,24 @@ def process_excel_image(input_path: str | Path, output_dir: str | Path, name_rul
     for row in rows[header_idx + 1 :]:
         name = extract_name_from_row(row, blocks)
         if not name:
-            print(f"WARN: skipped row {row}: name was not detected")
+            safe_print(f"WARN: skipped row {row}: name was not detected")
             continue
         sequence = ""
-        if name_rule == "seq-name-title":
+        if ("sequence" in name_attributes) if name_attributes is not None else name_rule == "seq-name-title":
             sequence = extract_sequence_from_row(row, blocks)
             if not sequence:
                 raise ValueError(f"sequence number was not detected for {name}")
         marked = draw_checkmark(image.copy(), row[0], row[1], left_margin)
-        output_path = resolve_output_path(output_dir, output_filename(name, title, name_rule, sequence=sequence))
+        filename = output_filename(
+            name,
+            title,
+            name_rule,
+            task="excel",
+            attributes=name_attributes,
+            separator=separator,
+            sequence=sequence,
+        )
+        output_path = resolve_output_path(output_dir, filename)
         marked.save(output_path, "JPEG", quality=95)
         count += 1
     return count

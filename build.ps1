@@ -29,12 +29,15 @@ if (-not (Test-Path $venvPython)) {
 Invoke-Checked $venvPython @("-m", "pip", "install", "--upgrade", "pip")
 Invoke-Checked $venvPython @("-m", "pip", "install", "-r", "requirements.txt")
 $distExe = Join-Path $PSScriptRoot "dist/photosign.exe"
+$distCliExe = Join-Path $PSScriptRoot "dist/photosign-cli.exe"
 Remove-Item -LiteralPath $distExe -Force -ErrorAction SilentlyContinue
+Remove-Item -LiteralPath $distCliExe -Force -ErrorAction SilentlyContinue
 Invoke-Checked $venvPython @("-m", "PyInstaller", "--clean", "photosign.spec")
 
 $release = Join-Path $PSScriptRoot "release"
 New-Item -ItemType Directory -Force -Path $release | Out-Null
 Copy-Item -Force $distExe (Join-Path $release "photosign.exe")
+Copy-Item -Force $distCliExe (Join-Path $release "photosign-cli.exe")
 $externalModels = Join-Path $release "models"
 if (Test-Path $externalModels) {
     Remove-Item -LiteralPath $externalModels -Recurse -Force
@@ -44,4 +47,5 @@ New-Item -ItemType Directory -Force -Path (Join-Path $release "output") | Out-Nu
 Copy-Item -Force (Join-Path $PSScriptRoot "README.md") (Join-Path $release "README.md")
 
 Write-Host "Built release/photosign.exe"
+Write-Host "Built release/photosign-cli.exe"
 Write-Host "PaddleOCR models are bundled inside release/photosign.exe."

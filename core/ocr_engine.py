@@ -93,6 +93,10 @@ class OCREngine:
         return cls._instance
 
     @classmethod
+    def preload(cls) -> None:
+        cls.get()
+
+    @classmethod
     def ocr_image(cls, image_path: str | Path) -> list[dict[str, Any]]:
         path = Path(image_path)
         safe_path, temp_path = ocr_safe_image_path(path)

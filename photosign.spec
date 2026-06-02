@@ -26,7 +26,9 @@ hiddenimports = [
     "albumentations",
     "albucore",
     "pydantic",
-] + collect_submodules("skimage") + collect_submodules("albumentations")
+] + collect_submodules("skimage", filter=lambda name: ".tests" not in name) + collect_submodules(
+    "albumentations", filter=lambda name: ".tests" not in name
+)
 
 
 a = Analysis(
@@ -44,13 +46,48 @@ a = Analysis(
 )
 pyz = PYZ(a.pure)
 
+splash = Splash(
+    "assets/splash.png",
+    binaries=a.binaries,
+    datas=a.datas,
+    text_pos=(32, 238),
+    text_size=10,
+    text_font="Segoe UI",
+    text_color="#6E6E73",
+    text_default="正在启动 PhotoSign，请稍候...",
+    always_on_top=True,
+)
+
 exe = EXE(
+    pyz,
+    splash,
+    a.scripts,
+    a.binaries,
+    a.datas,
+    splash.binaries,
+    [],
+    name="photosign",
+    debug=False,
+    bootloader_ignore_signals=False,
+    strip=False,
+    upx=True,
+    upx_exclude=[],
+    runtime_tmpdir=None,
+    console=False,
+    disable_windowed_traceback=False,
+    argv_emulation=False,
+    target_arch=None,
+    codesign_identity=None,
+    entitlements_file=None,
+)
+
+cli = EXE(
     pyz,
     a.scripts,
     a.binaries,
     a.datas,
     [],
-    name="photosign",
+    name="photosign-cli",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

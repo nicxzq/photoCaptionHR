@@ -35,7 +35,7 @@ Run the GUI with:
 python main.py
 ```
 
-Or build the executable and run `release\photosign.exe`. Select the task, naming rule, input folder, output folder, and model cache folder, then click Start.
+Or build the executable and run `release\photosign.exe`. Select the task, naming attributes, separator, input folder, output folder, and model cache folder, then click Start.
 
 ## Commands
 
@@ -43,6 +43,8 @@ Or build the executable and run `release\photosign.exe`. Select the task, naming
 python main.py --task excel --input .\input\excelFile --output .\output\excelFile --model-dir C:\PhotoSign\models
 python main.py --task cert --input .\input\zhengjian --output .\output\zhengjian --model-dir C:\PhotoSign\models
 ```
+
+The packaged command-line entry point is `release\photosign-cli.exe`.
 
 Optional naming rules:
 
@@ -74,6 +76,7 @@ Output:
 ```text
 release/
   photosign.exe
+  photosign-cli.exe
   input/
   output/
   README.md
